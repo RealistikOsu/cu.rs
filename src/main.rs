@@ -1,6 +1,7 @@
 // Internal module declarations.
 mod web;
 mod logger;
+mod consts;
 
 use std::sync::{Arc, RwLock};
 use web::server::{start_server, Address};
