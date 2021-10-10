@@ -1,9 +1,11 @@
 // Internal module declarations.
 mod web;
+mod logger;
 
-fn main() {
-    let mut w_packet = web::rw::Writer::new(4);
-    w_packet.write_int(&5_i32);
+use std::sync::{Arc, RwLock};
+use web::server::{start_server, Address};
 
-    println!("{:?}", w_packet.build());
+#[ntex::main]
+async fn main() {
+    start_server(Address::IPAddress("127.0.0.1:1337")).await;
 }
