@@ -2,6 +2,12 @@ use crate::consts::{
     privileges::Privileges,
     modes::{Mode, CustomMode},
 };
+use std::{
+    collections::HashMap,
+    sync::{Arc}
+};
+use tokio::sync::{RwLock, Mutex};
+
 
 /// A structure representing a physical location of a user.
 pub struct Geolocation {
@@ -12,8 +18,9 @@ pub struct Geolocation {
 
 const BYTEQUEUE_CAPACITY: usize = 512;
 
+/// A thread-safe, async-friendly queue of bytes.
 pub struct ByteQueue {
-    queue: Vec<u8>,
+    queue: Mutex<Vec<u8>>,
 }
 
 impl ByteQueue {
@@ -21,22 +28,23 @@ impl ByteQueue {
     #[inline(always)]
     pub fn new() -> Self {
         Self {
-            queue: Vec::with_capacity(BYTEQUEUE_CAPACITY),
+            queue: Mutex::new(Vec::with_capacity(BYTEQUEUE_CAPACITY)),
         }
     }
 
     /// Empties the ByteQueue, returning its previous contents prior to the
     /// clearing.
-    pub fn empty(&mut self) -> Vec<u8> {
-        let old_contents = self.queue.clone();
-        self.queue.clear();
+    pub async fn empty(&mut self) -> Vec<u8> {
+        let mut q = self.queue.lock().await;
+        let old_contents = q.clone();
+        q.clear();
         old_contents
     }
 
     /// Enqueues bytes to the `ByteQueue`.
     #[inline(always)]
-    pub fn enqueue(&mut self, mut bytes: Vec<u8>) {
-        self.queue.append(&mut bytes);
+    pub async fn enqueue(&self, mut bytes: Vec<u8>) {
+        self.queue.lock().await.append(&mut bytes);
     }
 }
 
@@ -61,4 +69,37 @@ pub struct Player {
     pub action: Action,
     pub mode: Mode,
     pub c_mode: CustomMode,
+
+    pub queue: ByteQueue,
+}
+
+/// A list of players, holding Arc + RwLock references and supporting
+/// broadcasting efficiently.
+pub struct PlayerList {
+    players: HashMap<i32, Arc<RwLock<Player>>>,
+}
+
+impl PlayerList {
+    /// Creates an empty player list.
+    pub fn new() -> Self {
+        Self { players: HashMap::new() }
+    }
+
+    /// Adds a player from a directly owner player structure.
+    pub fn add_player(&mut self, p: Player) {
+        let p_id = p.id.clone();
+        let pl = Arc::from(RwLock::from(p));
+
+        self.players.insert(p_id, pl);
+    }
+
+    /// # Broadcast
+    /// Queues the given packet vector to all players in the list.
+    pub async fn broadcast(&mut self, packet: Vec<u8>) {
+        for player in self.players.values() {
+            let p = player.read().await;
+
+            p.queue.enqueue(packet.clone());
+        }
+    }
 }
