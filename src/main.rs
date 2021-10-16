@@ -2,6 +2,8 @@
 mod web;
 mod logger;
 mod consts;
+mod objects;
+mod packets;
 
 use std::sync::{Arc, RwLock};
 use web::server::{start_server, Address};
