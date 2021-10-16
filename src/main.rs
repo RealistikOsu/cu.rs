@@ -4,6 +4,7 @@ mod logger;
 mod consts;
 mod objects;
 mod packets;
+mod config;
 
 use std::sync::{Arc, RwLock};
 use web::server::{start_server, Address};
