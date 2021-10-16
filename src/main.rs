@@ -8,8 +8,10 @@ mod config;
 
 use std::sync::{Arc, RwLock};
 use web::server::{start_server, Address};
+use packets::router::create_bancho_server;
 
 #[ntex::main]
 async fn main() {
+    create_bancho_server().await;
     start_server(Address::IPAddress("127.0.0.1:1337")).await;
 }

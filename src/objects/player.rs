@@ -99,7 +99,23 @@ impl PlayerList {
         for player in self.players.values() {
             let p = player.read().await;
 
-            p.queue.enqueue(packet.clone());
+            p.queue.enqueue(packet.clone()).await;
         }
+    }
+
+    /// # Player Get
+    /// Fetches a copy of the arc + rwlocked player object if found, else 
+    /// returns `None`.
+    pub fn get(&self, p_id: i32) -> Option<Arc<RwLock<Player>>> {
+        match self.players.get(&p_id) {
+            Some(pl) => { Some(pl.clone()) },
+            _ => None,
+        }
+    }
+
+    /// # Player Remove
+    /// Removes a player from the list if found, else does nothing.
+    pub fn remove(&mut self, p_id: i32) {
+        self.players.remove(&p_id);
     }
 }

@@ -3,6 +3,7 @@ use ntex::http::{Request, Response, Payload, HttpService, Method, HeaderMap};
 use ntex::server::Server;
 use futures::StreamExt;
 use crate::logger;
+use crate::packets::router::handle_bancho;
 
 /// The cu.rs request object wrapper, offering common functions.
 pub struct RequestContext {
@@ -70,7 +71,6 @@ pub enum Address {
 }
 
 // Web server
-static mut conns: u64 = 0;
 
 /// # Server Start
 /// Starts listening on an address.
@@ -97,15 +97,7 @@ pub async fn start_server(addr: Address) -> std::io::Result<()> {
 }
 
 async fn handle_conn(req: Request) -> Result<Response, std::io::Error> {
-    incr_connections();
-
     let mut req_ctx = RequestContext::from_req(req);
 
-    Ok(Response::from("Gaming."))
-}
-
-/// Increments the global connection amount by 1.
-#[inline(always)]
-fn incr_connections() {
-    unsafe {conns += 1;}
+    Ok(handle_bancho(req_ctx).await)
 }
