@@ -56,25 +56,25 @@ impl RequestContext {
     }
 
     /// # Read Body String
-    /// Reads the body bytes and converts them into a string, returning the
-    /// result of that conversion.
+    /// Reads the body bytes and converts them into a string, returning an empty
+    /// string on fail.
     #[inline(always)]
-    pub async fn read_body_string(&mut self) -> Result<String, std::string::FromUtf8Error> {
+    pub async fn read_string(&mut self) -> String {
         let body = self.read_body().await;
-        String::from_utf8(body)
+        String::from_utf8(body).unwrap_or(String::new())
     }
 }
 
 pub enum Address {
-    UNIXSock(&'static str),
-    IPAddress(&'static str),
+    UNIXSock(String),
+    IPAddress(String),
 }
 
 // Web server
 
 /// # Server Start
 /// Starts listening on an address.
-async fn start_server_ip(addr: &str) -> std::io::Result<()> {
+async fn start_server_ip(addr: String) -> std::io::Result<()> {
     logger::info(format!("Starting cu.rs on http://{}", addr));
 
     Server::build()
@@ -97,7 +97,7 @@ pub async fn start_server(addr: Address) -> std::io::Result<()> {
 }
 
 async fn handle_conn(req: Request) -> Result<Response, std::io::Error> {
-    let mut req_ctx = RequestContext::from_req(req);
+    let req_ctx = RequestContext::from_req(req);
 
     Ok(handle_bancho(req_ctx).await)
 }

@@ -34,7 +34,7 @@ impl ByteQueue {
 
     /// Empties the ByteQueue, returning its previous contents prior to the
     /// clearing.
-    pub async fn empty(&mut self) -> Vec<u8> {
+    pub async fn empty(&self) -> Vec<u8> {
         let mut q = self.queue.lock().await;
         let old_contents = q.clone();
         q.clear();
@@ -76,27 +76,27 @@ pub struct Player {
 /// A list of players, holding Arc + RwLock references and supporting
 /// broadcasting efficiently.
 pub struct PlayerList {
-    players: HashMap<i32, Arc<RwLock<Player>>>,
+    players: Mutex<HashMap<i32, Arc<RwLock<Player>>>>,
 }
 
 impl PlayerList {
     /// Creates an empty player list.
     pub fn new() -> Self {
-        Self { players: HashMap::new() }
+        Self { players: Mutex::new(HashMap::new()) }
     }
 
     /// Adds a player from a directly owner player structure.
-    pub fn add_player(&mut self, p: Player) {
+    pub async fn add_player(&self, p: Player) {
         let p_id = p.id.clone();
         let pl = Arc::from(RwLock::from(p));
 
-        self.players.insert(p_id, pl);
+        self.players.lock().await.insert(p_id, pl);
     }
 
     /// # Broadcast
     /// Queues the given packet vector to all players in the list.
-    pub async fn broadcast(&mut self, packet: Vec<u8>) {
-        for player in self.players.values() {
+    pub async fn broadcast(&self, packet: Vec<u8>) {
+        for player in self.players.lock().await.values() {
             let p = player.read().await;
 
             p.queue.enqueue(packet.clone()).await;
@@ -106,8 +106,8 @@ impl PlayerList {
     /// # Player Get
     /// Fetches a copy of the arc + rwlocked player object if found, else 
     /// returns `None`.
-    pub fn get(&self, p_id: i32) -> Option<Arc<RwLock<Player>>> {
-        match self.players.get(&p_id) {
+    pub async fn get(&self, p_id: i32) -> Option<Arc<RwLock<Player>>> {
+        match self.players.lock().await.get(&p_id) {
             Some(pl) => { Some(pl.clone()) },
             _ => None,
         }
@@ -115,7 +115,7 @@ impl PlayerList {
 
     /// # Player Remove
     /// Removes a player from the list if found, else does nothing.
-    pub fn remove(&mut self, p_id: i32) {
-        self.players.remove(&p_id);
+    pub async fn remove(&mut self, p_id: i32) {
+        self.players.lock().await.remove(&p_id);
     }
 }

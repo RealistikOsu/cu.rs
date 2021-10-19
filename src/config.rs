@@ -9,7 +9,7 @@ const CONFIG_DIR: &str = "config.json";
 /// The class storing the kisumi.rs config values.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
-    pub http_sock: String,
+    pub http_ip: String,
     pub server_name: String,
     pub server_bot_id: i32,
     pub sql_server: String,
@@ -21,10 +21,10 @@ pub struct Config {
 impl Config {
     /// Creates an instance of `Config` featuring default values. Meant for
     /// new config generation.
-    pub fn default() -> Self {
+    pub fn new() -> Self {
         Self {
-            http_sock: "/tmp/kisumi.sock".to_string(),
-            server_name: "KisumiDev".to_string(),
+            http_ip: "127.0..1:3459".to_string(),
+            server_name: "cu.rs".to_string(),
             server_bot_id: 999,
             sql_server: "localhost".to_string(),
             sql_db: "rosu".to_string(),
@@ -73,4 +73,17 @@ impl Config {
     pub fn config_exists() -> bool {
         Path::new(CONFIG_DIR).exists()
     }
+}
+
+/// Ensures the presence of a config. If it doesnt exist, creates a new one and
+/// closes the program.
+pub fn ensure_config() -> Config {
+    if !Config::config_exists() {
+        let cfg = Config::new();
+        cfg.write_file(false);
+        panic!("New config written to file!");
+    }
+
+    let cfg = Config::from_file();
+    cfg
 }
