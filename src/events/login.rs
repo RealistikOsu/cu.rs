@@ -67,7 +67,7 @@ impl LoginData {
 }
 
 /// Handles the action of logging into the server
-pub async fn login_handle(req: &mut RequestContext) -> (String, Vec<u8>) {
+pub async fn login_handle(req: &mut RequestContext, srv: &BanchoServer) -> (String, Vec<u8>) {
     let login_data = LoginData::from_body(req.read_string().await);
     ("no".to_string(), vec![])
 }

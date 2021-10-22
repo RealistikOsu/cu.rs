@@ -159,6 +159,39 @@ impl Reader {
     }
 }
 
+/// # SimplePacketQueue
+/// A simple wrapper around `Vec<u8>` allowing for the quick addition of
+/// bytes. FOR SINGLETHREADED USE ONLY. Made to avoid locking the main queue
+/// many times.
+pub struct SimplePacketQueue {
+    bytes: Vec<u8>
+}
+
+impl SimplePacketQueue {
+    /// Creates a new empty instance of `SimplePacketQueue`.
+    pub fn new() -> Self {
+        Self {bytes: vec![]}
+    }
+
+    /// # Queue
+    /// Appends a vector of bytes onto the queue.
+    pub fn queue(&mut self, mut b: Vec<u8>) {
+        self.bytes.append(&mut b);
+    }
+
+    /// # As Vec
+    /// Returns the pure queue bytes, destroying the queue in the process.
+    pub fn as_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+}
+
+impl From<Vec<u8>> for SimplePacketQueue {
+    fn from(b: Vec<u8>) -> Self {
+        Self {bytes: b}
+    }
+}
+
 // Ok so you see, this is a mess, but it lets us use generics elsewhere.
 pub trait PacketVector {
     fn to_osu_vec(&self) -> Vec<u8>;

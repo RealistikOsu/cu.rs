@@ -93,4 +93,23 @@ impl Privileges {
     pub fn reset_priv(&mut self, flag: u32) {
         self.privs = flag;
     }
+
+    /// # Bancho Priv
+    /// Returns the privilege set as a BanchoPriv enum. This enum is used
+    /// by the client directly for features such as direct.
+    pub fn as_bancho_priv(&self, always_supporter: bool) -> u8 {
+        let mut bpriv: u8 = BP_PLAYER;
+        if always_supporter || self.donor() {bpriv |= BP_SUPPORTER;}
+        if self.rank_beatmaps() {bpriv |= BP_BAT;}
+
+        bpriv
+    }
 }
+
+// Special "Bancho Priv"
+const BP_PLAYER: u8 = 1 << 0 ;
+const BP_BAT: u8 = 1 << 1;
+const BP_SUPPORTER: u8 = 1 << 2;
+const BP_PEPPY: u8 = 1 << 3;
+const BP_DEV: u8 = 1 << 4;
+const BP_TOURNEY: u8 = 1 << 5;
